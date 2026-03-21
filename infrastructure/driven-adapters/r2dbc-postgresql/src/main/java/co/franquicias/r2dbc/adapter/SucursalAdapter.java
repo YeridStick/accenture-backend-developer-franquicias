@@ -35,6 +35,7 @@ public class SucursalAdapter extends ReactiveAdapterOperations<Sucursal, Sucursa
                 .nombre(nombre)
                 .createdAt(now)
                 .updatedAt(now)
+                .isNewRecord(true)
                 .build();
 
         return franquiciaRepository.existsById(franquiciaId)

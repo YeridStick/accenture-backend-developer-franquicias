@@ -17,7 +17,7 @@ public record ProductoViewDTO(
                 (String) m.get("productoId"),
                 (String) m.get("productoNombre"),
                 toInt(m.get("stock"), 0),
-                (Long) m.get("precio"),
+                toLong(m.get("precio"), 0L),
                 (String) m.get("franquiciaId"),
                 (String) m.get("franquiciaNombre"),
                 (String) m.get("sucursalId"),
@@ -29,6 +29,13 @@ public record ProductoViewDTO(
         if (val == null) return def;
         if (val instanceof Number n) return n.intValue();
         try { return Integer.parseInt(val.toString()); }
+        catch (Exception e) { return def; }
+    }
+
+    private static long toLong(Object val, long def) {
+        if (val == null) return def;
+        if (val instanceof Number n) return n.longValue();
+        try { return Long.parseLong(val.toString()); }
         catch (Exception e) { return def; }
     }
 }

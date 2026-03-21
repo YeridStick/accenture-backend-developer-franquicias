@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -46,11 +47,7 @@ public class Handler {
     }
 
     public Mono<ServerResponse> obtenerFranquicias(ServerRequest req) {
-        boolean verProducto = req.queryParam("includeProductos")
-                .map(String::toLowerCase)
-                .map(v -> v.equals("true") || v.equals("1") || v.equals("yes"))
-                .orElse(false);
-        return franquiciaUseCase.obtenerFranquicias(verProducto)
+        return franquiciaUseCase.obtenerFranquicias()
                 .collectList()
                 .flatMap(list -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,7 +141,7 @@ public class Handler {
         String sId = req.pathVariable("sucursalId");
         return req.bodyToMono(CreateProductoRequest.class)
                 .flatMap(validator::validate)
-                .flatMap(b -> productoUseCase.agregarProducto(fId, sId, b.nombre().trim(), b.stock()))
+                .flatMap(b -> productoUseCase.agregarProducto(fId, sId, b.nombre().trim(), b.precio(), b.stock()))
                 .flatMap(p -> ServerResponse.status(201).contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.created(p)));
     }
 
@@ -180,7 +177,7 @@ public class Handler {
                     }
                     Producto patch = Producto.builder()
                             .nombre(n)
-                            .stock(stock != null ? stock : 0)
+                            .stock(stock)
                             .precio(b.precio())
                             .sucursalId(b.sucursalId())
                             .build();
@@ -200,7 +197,9 @@ public class Handler {
     }
 
     public Mono<ServerResponse> getAllProductos(ServerRequest req) {
-        return productoUseCase.getAllProductos()
+        int page = req.queryParam("page").map(Integer::parseInt).orElse(0);
+        int size = req.queryParam("size").map(Integer::parseInt).orElse(10);
+        return productoUseCase.getAllProductos(page, size)
                 .collectList()
                 .flatMap(list -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -215,8 +214,11 @@ public class Handler {
 
     public Mono<ServerResponse> searchProductosGlobal(ServerRequest req) {
         String q = req.queryParam("nombreLike").map(String::trim).orElse("");
-        return productoUseCase.searchProductosGlobal(q)
-                .switchIfEmpty(productoUseCase.getAllProductos())
+        int page = req.queryParam("page").map(Integer::parseInt).orElse(0);
+        int size = req.queryParam("size").map(Integer::parseInt).orElse(10);
+
+        return productoUseCase.searchProductosGlobal(q, page, size)
+                .switchIfEmpty(Flux.defer(() -> productoUseCase.getAllProductos(page, size)))
                 .collectList()
                 .flatMap(list -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -224,7 +226,9 @@ public class Handler {
     }
 
     public Mono<ServerResponse> getAllProductosView(ServerRequest req) {
-        return productoUseCase.getAllProductosViewRaw()
+        int page = req.queryParam("page").map(Integer::parseInt).orElse(0);
+        int size = req.queryParam("size").map(Integer::parseInt).orElse(10);
+        return productoUseCase.getAllProductosViewRaw(page, size)
                 .map(o -> ProductoViewDTO.fromMap((Map<String,Object>) o))
                 .collectList()
                 .flatMap(list -> ServerResponse.ok()
@@ -242,7 +246,10 @@ public class Handler {
     public Mono<ServerResponse> getProductosDeSucursal(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
         String sId = req.pathVariable("sucursalId");
-        return productoUseCase.getProductosDeSucursal(fId, sId)
+        int page = req.queryParam("page").map(Integer::parseInt).orElse(0);
+        int size = req.queryParam("size").map(Integer::parseInt).orElse(10);
+
+        return productoUseCase.getProductosDeSucursal(fId, sId, page, size)
                 .collectList()
                 .flatMap(list -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)

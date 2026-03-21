@@ -21,18 +21,15 @@ public class FranquiciaUseCase {
     }
 
     public Mono<Franquicia> obtenerPorId(String id) {
-        return franquiciaRepository.findById(id)
-                .flatMap(f -> hydrateFranquicia(f, true));
+        return franquiciaRepository.findById(id);
     }
 
     public Mono<Franquicia> obtenerFranquiciaPorNombre(String nombre) {
-        return franquiciaRepository.findByNombre(nombre)
-                .flatMap(f -> hydrateFranquicia(f, true));
+        return franquiciaRepository.findByNombre(nombre);
     }
 
-    public Flux<Franquicia> obtenerFranquicias(boolean verProducto) {
-        return franquiciaRepository.findAll()
-                .flatMap(f -> hydrateFranquicia(f, verProducto));
+    public Flux<Franquicia> obtenerFranquicias() {
+        return franquiciaRepository.findAll();
     }
 
     public Mono<String> eliminarFranquiciaPorId(String id) {
@@ -43,20 +40,4 @@ public class FranquiciaUseCase {
         return franquiciaRepository.actualizarFranquicia(franquiciaId, cambios);
     }
 
-    // ---------- Operaciones de Hidratación ----------
-
-    private Mono<Franquicia> hydrateFranquicia(Franquicia f, boolean includeProductos) {
-        return sucursalRepository.listarPorFranquicia(f.getId())
-                .flatMap(suc -> includeProductos 
-                        ? hydrateSucursal(suc) 
-                        : Mono.just(suc))
-                .collectList()
-                .map(list -> f.toBuilder().sucursales(list).build());
-    }
-
-    private Mono<Sucursal> hydrateSucursal(Sucursal s) {
-        return productoRepository.listarPorSucursal(s.getId())
-                .collectList()
-                .map(prods -> s.toBuilder().productos(prods).build());
-    }
 }

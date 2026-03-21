@@ -17,7 +17,7 @@ import java.util.List;
 public class Franquicia {
     private String id;
     private String nombre;
-    private List<Sucursal> sucursales = new ArrayList<>();
+    //private List<Sucursal> sucursales = new ArrayList<>();
     private Instant createdAt;
     private Instant updatedAt;
 }

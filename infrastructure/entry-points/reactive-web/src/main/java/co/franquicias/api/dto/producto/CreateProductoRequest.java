@@ -8,5 +8,8 @@ public record CreateProductoRequest(
         String nombre,
 
         @Min(value = 0, message = "El stock no puede ser negativo")
-        int stock
+        int stock,
+
+        @Min(value = 0, message = "El precio no puede ser negativo")
+        long precio
 ) {}

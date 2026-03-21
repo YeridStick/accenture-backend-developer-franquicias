@@ -65,7 +65,7 @@ class HandlerTest {
         return ss;
     }
 
-    private Producto p(String id, String sid, String nombre, int stock) {
+    private Producto p(String id, String sid, String nombre, Integer stock) {
         Producto pp = new Producto();
         pp.setId(id); pp.setSucursalId(sid); pp.setNombre(nombre); pp.setStock(stock);
         return pp;
@@ -125,18 +125,18 @@ class HandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/franquicias?includeProductos=1 => delega con true")
-    void obtenerFranquicias_includeProductos() {
-        when(franquiciaUseCase.obtenerFranquicias(true)).thenReturn(Flux.just(f("f1","F1")));
+    @DisplayName("GET /api/franquicias => no usa includeProductos (ya no existe)")
+    void obtenerFranquicias_simple() {
+        when(franquiciaUseCase.obtenerFranquicias()).thenReturn(Flux.just(f("f1","F1")));
 
-        client.get().uri("/api/franquicias?includeProductos=1")
+        client.get().uri("/api/franquicias")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .expectBody()
                 .jsonPath("$.data[0].id").isEqualTo("f1");
 
-        verify(franquiciaUseCase).obtenerFranquicias(true);
+        verify(franquiciaUseCase).obtenerFranquicias();
     }
 
     @Test
@@ -263,12 +263,12 @@ class HandlerTest {
     @Test
     @DisplayName("POST /api/.../productos => 200 producto")
     void agregarProducto() {
-        when(productoUseCase.agregarProducto("f1","s1","P1",5))
+        when(productoUseCase.agregarProducto("f1","s1","P1", 0L, 5))
                 .thenReturn(Mono.just(p("p1","s1","P1",5)));
 
         client.post().uri("/api/franquicias/f1/sucursales/s1/productos")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new CreateProductoRequest("P1",5))
+                .bodyValue(new CreateProductoRequest("P1",5, 0L))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody()
@@ -303,27 +303,26 @@ class HandlerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/productos/{pId} => mapea stock=0 cuando viene null/ausente")
-    void actualizarProducto_stockDefaultCero() {
+    @DisplayName("PATCH /api/productos/{pId} => permite stock null para actualización parcial")
+    void actualizarProducto_partial() {
         ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
         when(productoUseCase.actualizarProducto(eq("p1"), any(Producto.class)))
                 .thenAnswer(inv -> Mono.just(inv.getArgument(1)));
 
         client.patch().uri("/api/productos/p1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UpdateProductoRequest("Nuevo", null, 0, "s1"))
+                .bodyValue(new UpdateProductoRequest("Nuevo", null, null, "s1"))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.data.nombre").isEqualTo("Nuevo")
-                .jsonPath("$.data.stock").isEqualTo(0)
                 .jsonPath("$.data.sucursalId").isEqualTo("s1");
 
         verify(productoUseCase).actualizarProducto(eq("p1"), captor.capture());
         Producto enviado = captor.getValue();
-        Assertions.assertEquals(0, enviado.getStock());
+        Assertions.assertNull(enviado.getStock());
+        Assertions.assertNull(enviado.getPrecio());
         Assertions.assertEquals("Nuevo", enviado.getNombre());
-        Assertions.assertEquals("s1", enviado.getSucursalId());
     }
 
     @Test
@@ -355,9 +354,9 @@ class HandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/productos => 200 lista")
+    @DisplayName("GET /api/productos => 200 lista paginada")
     void getAllProductos() {
-        when(productoUseCase.getAllProductos()).thenReturn(Flux.just(p("p1","s1","A",1)));
+        when(productoUseCase.getAllProductos(0, 10)).thenReturn(Flux.just(p("p1","s1","A",1)));
 
         client.get().uri("/api/productos")
                 .exchange()
@@ -381,11 +380,10 @@ class HandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/productos/search?nombreLike=ab => 200 con lista")
+    @DisplayName("GET /api/productos/search?nombreLike=ab => 200 lista paginada")
     void searchProductosGlobal() {
-        when(productoUseCase.searchProductosGlobal("ab"))
+        when(productoUseCase.searchProductosGlobal("ab", 0, 10))
                 .thenReturn(Flux.just(p("p1","s1","ab",1)));
-        when(productoUseCase.getAllProductos()).thenReturn(Flux.empty());
 
         client.get().uri("/api/productos/search?nombreLike=ab")
                 .exchange()
@@ -395,9 +393,9 @@ class HandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/franquicias/{fId}/sucursales/{sId}/productos => 200 con lista")
+    @DisplayName("GET /api/franquicias/{fId}/sucursales/{sId}/productos => 200 lista paginada")
     void getProductosDeSucursal() {
-        when(productoUseCase.getProductosDeSucursal("f1","s1"))
+        when(productoUseCase.getProductosDeSucursal("f1","s1", 0, 10))
                 .thenReturn(Flux.just(p("p1","s1","A",1)));
 
         client.get().uri("/api/franquicias/f1/sucursales/s1/productos")
@@ -433,7 +431,7 @@ class HandlerTest {
                 "sucursalId", "s1",
                 "sucursalNombre", "Suc1"
         );
-        when(productoUseCase.getAllProductosViewRaw()).thenReturn(Flux.just(mockMap));
+        when(productoUseCase.getAllProductosViewRaw(0, 10)).thenReturn(Flux.just(mockMap));
 
         client.get().uri("/api/productos/view")
                 .exchange()

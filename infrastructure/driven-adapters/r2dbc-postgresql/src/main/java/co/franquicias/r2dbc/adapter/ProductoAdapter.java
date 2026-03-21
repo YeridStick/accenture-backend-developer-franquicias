@@ -9,6 +9,7 @@ import co.franquicias.r2dbc.helper.ReactiveAdapterOperations;
 import co.franquicias.r2dbc.repository.ProductoRepository;
 import co.franquicias.r2dbc.repository.SucursalRepository;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,15 +28,17 @@ public class ProductoAdapter extends ReactiveAdapterOperations<Producto, Product
     }
 
     @Override
-    public Mono<Producto> crear(String sucursalId, String nombre, int stock) {
+    public Mono<Producto> crear(String sucursalId, String nombre, long precio, int stock) {
         var now = Instant.now();
         var data = ProductoEntity.builder()
                 .id(UUID.randomUUID().toString())
                 .sucursalId(sucursalId)
                 .nombre(nombre)
+                .precio(precio)
                 .stock(stock)
                 .createdAt(now)
                 .updatedAt(now)
+                .isNewRecord(true)
                 .build();
 
         return sucursalRepository.existsById(sucursalId)
@@ -55,8 +58,18 @@ public class ProductoAdapter extends ReactiveAdapterOperations<Producto, Product
     }
 
     @Override
+    public Flux<Producto> listarPorSucursal(String sucursalId, int page, int size) {
+        return repository.findBySucursalId(sucursalId, PageRequest.of(page, size)).map(this::toEntity);
+    }
+
+    @Override
     public Flux<Producto> buscarPorNombreLike(String nombreLike) {
         return repository.findByNombreContainingIgnoreCase(nombreLike).map(this::toEntity);
+    }
+
+    @Override
+    public Flux<Producto> buscarPorNombreLike(String nombreLike, int page, int size) {
+        return repository.findByNombreContainingIgnoreCase(nombreLike, PageRequest.of(page, size)).map(this::toEntity);
     }
 
     @Override
@@ -80,6 +93,11 @@ public class ProductoAdapter extends ReactiveAdapterOperations<Producto, Product
     public Mono<Producto> actualizarProducto(String id, Producto cambios) {
         cambios.setUpdatedAt(Instant.now());
         return mergeNonNullAndSave(id, cambios);
+    }
+
+    @Override
+    public Flux<Producto> findAll(int page, int size) {
+        return repository.findAllBy(PageRequest.of(page, size)).map(this::toEntity);
     }
 
     @Override

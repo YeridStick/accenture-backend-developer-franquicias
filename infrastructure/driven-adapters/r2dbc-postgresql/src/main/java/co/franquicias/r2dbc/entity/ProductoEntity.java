@@ -20,14 +20,14 @@ public class ProductoEntity implements Persistable<String> {
     private String id;
     private String sucursalId;
     private String nombre;
-    private long precio;
-    private int stock;
+    private Long precio;
+    private Integer stock;
     private Instant createdAt;
     private Instant updatedAt;
 
     @org.springframework.data.annotation.Transient
     @Builder.Default
-    private boolean isNewRecord = true;
+    private boolean isNewRecord = false;
 
     @Override
     public boolean isNew() {

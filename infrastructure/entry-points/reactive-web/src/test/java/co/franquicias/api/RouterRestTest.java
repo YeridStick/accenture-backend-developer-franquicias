@@ -144,7 +144,7 @@ class RouterRestTest {
 
         client.patch().uri("/api/productos/p1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UpdateProductoRequest("Nombre", 9, 0, "s1"))
+                .bodyValue(new UpdateProductoRequest("Nombre", 9, 0L, "s1"))
                 .exchange()
                 .expectStatus().isOk();
 
@@ -339,7 +339,7 @@ class RouterRestTest {
 
         client.post().uri("/api/franquicias/f1/sucursales/s1/productos")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new CreateProductoRequest("P1", 5))
+                .bodyValue(new CreateProductoRequest("P1", 5, 0L))
                 .exchange()
                 .expectStatus().isOk();
 

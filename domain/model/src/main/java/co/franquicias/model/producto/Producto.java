@@ -12,8 +12,8 @@ public class Producto {
     private String id;
     private String sucursalId;
     private String nombre;
-    private long precio;
-    private int stock;
+    private Long precio;
+    private Integer stock;
     private Instant createdAt;
     private Instant updatedAt;
 }

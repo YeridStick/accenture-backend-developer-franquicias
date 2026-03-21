@@ -24,7 +24,7 @@ public class FranquiciaEntity implements Persistable<String> {
 
     @org.springframework.data.annotation.Transient
     @Builder.Default
-    private boolean isNewRecord = true;
+    private boolean isNewRecord = false;
 
     @Override
     public boolean isNew() {

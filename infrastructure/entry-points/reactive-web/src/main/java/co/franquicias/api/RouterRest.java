@@ -5,6 +5,7 @@ import co.franquicias.api.dto.franquicia.CreateFranquiciaRequest;
 import co.franquicias.api.dto.franquicia.UpdateFranquiciaRequest;
 import co.franquicias.api.dto.producto.CreateProductoRequest;
 import co.franquicias.api.dto.producto.UpdateStockRequest;
+import co.franquicias.api.dto.producto.UpdateProductoRequest;
 import co.franquicias.api.dto.sucursal.CreateSucursalRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -131,14 +132,22 @@ public class RouterRest {
             beanClass = Handler.class, beanMethod = "searchProductosGlobal",
             operation = @Operation(
                 operationId = "searchProductos", summary = "Buscar productos globalmente", tags = {"Productos"},
-                parameters = {@Parameter(name = "q", in = ParameterIn.QUERY, description = "Texto a buscar")}
+                parameters = {
+                    @Parameter(name = "nombreLike", in = ParameterIn.QUERY, description = "Texto a buscar"),
+                    @Parameter(name = "page",       in = ParameterIn.QUERY, description = "Número de página (0+)"),
+                    @Parameter(name = "size",       in = ParameterIn.QUERY, description = "Tamaño de página")
+                }
             )
         ),
         @RouterOperation(
             path = RestConstants.PRODUCTOS_VIEW, method = RequestMethod.GET,
             beanClass = Handler.class, beanMethod = "getAllProductosView",
             operation = @Operation(
-                operationId = "getAllProductosView", summary = "Listar todos los productos (Vista Detallada)", tags = {"Productos"}
+                operationId = "getAllProductosView", summary = "Listar todos los productos (Vista Detallada)", tags = {"Productos"},
+                parameters = {
+                    @Parameter(name = "page", in = ParameterIn.QUERY, description = "Número de página (0+)"),
+                    @Parameter(name = "size", in = ParameterIn.QUERY, description = "Tamaño de página")
+                }
             )
         ),
         @RouterOperation(
@@ -162,7 +171,8 @@ public class RouterRest {
             beanClass = Handler.class, beanMethod = "actualizarProducto",
             operation = @Operation(
                 operationId = "actualizarProducto", summary = "Actualizar producto (Campos base)", tags = {"Productos"},
-                parameters = {@Parameter(name = "productoId", in = ParameterIn.PATH)}
+                parameters = {@Parameter(name = "productoId", in = ParameterIn.PATH)},
+                requestBody = @RequestBody(content = @Content(schema = @Schema(implementation = UpdateProductoRequest.class)))
             )
         ),
         @RouterOperation(
@@ -184,7 +194,9 @@ public class RouterRest {
                 operationId = "getProductosDeSucursal", summary = "Listar productos de una sucursal", tags = {"Productos"},
                 parameters = {
                     @Parameter(name = "franquiciaId", in = ParameterIn.PATH),
-                    @Parameter(name = "sucursalId",   in = ParameterIn.PATH)
+                    @Parameter(name = "sucursalId",   in = ParameterIn.PATH),
+                    @Parameter(name = "page",         in = ParameterIn.QUERY, description = "Página"),
+                    @Parameter(name = "size",         in = ParameterIn.QUERY, description = "Tamaño")
                 }
             )
         ),

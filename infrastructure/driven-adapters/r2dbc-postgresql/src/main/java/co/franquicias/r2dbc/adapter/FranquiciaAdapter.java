@@ -28,6 +28,7 @@ public class FranquiciaAdapter extends ReactiveAdapterOperations<Franquicia, Fra
                 .nombre(nombre)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
+                .isNewRecord(true)
                 .build();
 
         return repository.existsByNombre(nombre)

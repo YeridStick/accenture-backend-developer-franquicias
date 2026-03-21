@@ -18,7 +18,7 @@ public class Sucursal {
     private String id;
     private String franquiciaId;
     private String nombre;
-    private List<Producto> productos = new ArrayList<>();
+    //private List<Producto> productos = new ArrayList<>();
     private Instant createdAt;
     private Instant updatedAt;
 }
