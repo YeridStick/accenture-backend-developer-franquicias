@@ -1,0 +1,37 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: "franquicias-back"
+  profiles:
+    active: "local"
+  r2dbc:
+    postgresql:
+      host: "localhost"
+      port: 5432
+      database: "franquicias_db"
+      username: "admin"
+      password: "mi_password_seguro"
+      schema: "public"
+  connection-pool:
+    initial-size: 5
+    max-size: 20
+    max-idle-time: 30
+
+  sql:
+    init:
+      mode: never
+  main:
+    allow-bean-definition-overriding: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+cors:
+  allowed-origins: "http://localhost:4200,http://localhost:8080"
