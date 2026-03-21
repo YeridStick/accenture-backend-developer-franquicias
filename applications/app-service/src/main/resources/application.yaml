@@ -7,11 +7,11 @@ spring:
     active: "local"
   r2dbc:
     postgresql:
-      host: "localhost"
+      host: "db.khykvzscofjwatbmugqu.supabase.co"
       port: 5432
-      database: "franquicias_db"
-      username: "admin"
-      password: "mi_password_seguro"
+      database: "postgres"
+      username: "postgres"
+      password: "Panconqueso9122003."
       schema: "public"
   connection-pool:
     initial-size: 5
