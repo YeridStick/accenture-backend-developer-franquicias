@@ -144,7 +144,7 @@ class RouterRestTest {
 
         client.patch().uri("/api/productos/p1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new UpdateProductoRequest("Nombre", 9, "s1"))
+                .bodyValue(new UpdateProductoRequest("Nombre", 9, 0, "s1"))
                 .exchange()
                 .expectStatus().isOk();
 

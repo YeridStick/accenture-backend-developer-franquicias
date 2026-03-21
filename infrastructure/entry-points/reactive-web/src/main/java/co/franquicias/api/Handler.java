@@ -9,7 +9,7 @@ import co.franquicias.api.dto.producto.UpdateStockRequest;
 import co.franquicias.api.dto.sucursal.CreateSucursalRequest;
 import co.franquicias.api.dto.sucursal.UpdateSucursalRequest;
 import co.franquicias.api.error.RequestValidator;
-import co.franquicias.api.mapper.DtoMappers;
+import co.franquicias.api.dto.response.ApiResponse;
 import co.franquicias.model.producto.Producto;
 import co.franquicias.model.sucursal.Sucursal;
 import co.franquicias.model.franquicia.Franquicia;
@@ -37,12 +37,12 @@ public class Handler {
     // ---------- Franquicia ----------
     public Mono<ServerResponse> crearFranquicia(ServerRequest req) {
         return req.bodyToMono(CreateFranquiciaRequest.class)
-                .doOnNext(validator::validate)
+                .flatMap(validator::validate)
                 .flatMap(body -> franquiciaUseCase.crearFranquicia(body.nombre().trim()))
                 .flatMap(f -> ServerResponse
                         .created(URI.create("/api/franquicias/" + f.getId()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(f));
+                        .bodyValue(ApiResponse.created(f)));
     }
 
     public Mono<ServerResponse> obtenerFranquicias(ServerRequest req) {
@@ -50,15 +50,17 @@ public class Handler {
                 .map(String::toLowerCase)
                 .map(v -> v.equals("true") || v.equals("1") || v.equals("yes"))
                 .orElse(false);
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(franquiciaUseCase.obtenerFranquicias(verProducto), Franquicia.class);
+        return franquiciaUseCase.obtenerFranquicias(verProducto)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> obtenerFranquicia(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
         return franquiciaUseCase.obtenerPorId(fId)
-                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(f));
+                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(f)));
     }
 
     public Mono<ServerResponse> obtenerFranquiciaPorNombre(ServerRequest req) {
@@ -67,13 +69,13 @@ public class Handler {
             return Mono.error(new IllegalArgumentException("El nombre es requerido para la consulta"));
         }
         return franquiciaUseCase.obtenerFranquiciaPorNombre(nombre)
-                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(f));
+                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(f)));
     }
 
     public Mono<ServerResponse> eliminarFranquicia(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
         return franquiciaUseCase.eliminarFranquiciaPorId(fId)
-                .flatMap(msg -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(Map.of("message", msg)));
+                .flatMap(msg -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(Map.of("message", msg))));
     }
 
     public Mono<ServerResponse> actualizarFranquicia(ServerRequest req) {
@@ -86,35 +88,37 @@ public class Handler {
                     }
                     return franquiciaUseCase.actualizarFranquicia(fId, Franquicia.builder().nombre(n).build());
                 })
-                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(f));
+                .flatMap(f -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(f)));
     }
 
     // ---------- Sucursal ----------
     public Mono<ServerResponse> agregarSucursal(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
         return req.bodyToMono(CreateSucursalRequest.class)
-                .doOnNext(validator::validate)
+                .flatMap(validator::validate)
                 .flatMap(b -> sucursalUseCase.agregarSucursal(fId, b.nombre().trim()))
-                .flatMap(s -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(s));
+                .flatMap(s -> ServerResponse.status(201).contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.created(s)));
     }
 
     public Mono<ServerResponse> listarSucursalesDeFranquicia(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(sucursalUseCase.obtenerSucursalPorFranquiciaId(fId), Sucursal.class);
+        return sucursalUseCase.obtenerSucursalPorFranquiciaId(fId)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> obtenerSucursal(ServerRequest req) {
         String sId = req.pathVariable("sucursalId");
         return sucursalUseCase.obtenerSucursalPorId(sId)
-                .flatMap(suc -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(suc));
+                .flatMap(suc -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(suc)));
     }
 
     public Mono<ServerResponse> eliminarSucursal(ServerRequest req) {
         String sId = req.pathVariable("sucursalId");
         return sucursalUseCase.eliminarSucursalPorId(sId)
-                .flatMap(msg -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(Map.of("message", msg)));
+                .flatMap(msg -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(Map.of("message", msg))));
     }
 
     public Mono<ServerResponse> actualizarSucursal(ServerRequest req) {
@@ -131,7 +135,7 @@ public class Handler {
                             .build();
                     return sucursalUseCase.actualizarSucursal(sId, patch);
                 })
-                .flatMap(s -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(s));
+                .flatMap(s -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(s)));
     }
 
     // ---------- Producto ----------
@@ -139,9 +143,9 @@ public class Handler {
         String fId = req.pathVariable("franquiciaId");
         String sId = req.pathVariable("sucursalId");
         return req.bodyToMono(CreateProductoRequest.class)
-                .doOnNext(validator::validate)
+                .flatMap(validator::validate)
                 .flatMap(b -> productoUseCase.agregarProducto(fId, sId, b.nombre().trim(), b.stock()))
-                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(p));
+                .flatMap(p -> ServerResponse.status(201).contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.created(p)));
     }
 
     public Mono<ServerResponse> eliminarProducto(ServerRequest req) {
@@ -157,9 +161,9 @@ public class Handler {
         String sId = req.pathVariable("sucursalId");
         String pId = req.pathVariable("productoId");
         return req.bodyToMono(UpdateStockRequest.class)
-                .doOnNext(validator::validate)
+                .flatMap(validator::validate)
                 .flatMap(b -> productoUseCase.actualizarStock(fId, sId, pId, b.stock()))
-                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(p));
+                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(p)));
     }
 
     public Mono<ServerResponse> actualizarProducto(ServerRequest req) {
@@ -182,60 +186,66 @@ public class Handler {
                             .build();
                     return productoUseCase.actualizarProducto(pId, patch);
                 })
-                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(p));
+                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(p)));
     }
 
     // ---------- Reportes / consultas ----------
     public Mono<ServerResponse> maxStockPorSucursal(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(productoUseCase.maxStockPorSucursal(fId), Map.class);
+        return productoUseCase.maxStockPorSucursal(fId)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> getAllProductos(ServerRequest req) {
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(productoUseCase.getAllProductos(), Producto.class);
+        return productoUseCase.getAllProductos()
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> getProductoGlobal(ServerRequest req) {
         String pId = req.pathVariable("productoId");
         return productoUseCase.getProductoGlobal(pId)
-                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(p));
+                .flatMap(p -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(p)));
     }
 
     public Mono<ServerResponse> searchProductosGlobal(ServerRequest req) {
         String q = req.queryParam("nombreLike").map(String::trim).orElse("");
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(productoUseCase.searchProductosGlobal(q)
-                                .switchIfEmpty(productoUseCase.getAllProductos()),
-                        Producto.class);
+        return productoUseCase.searchProductosGlobal(q)
+                .switchIfEmpty(productoUseCase.getAllProductos())
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> getAllProductosView(ServerRequest req) {
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(
-                        productoUseCase.getAllProductosViewRaw()
-                                .map(o -> DtoMappers.toProductoViewDTO((Map<String,Object>) o)),
-                        ProductoViewDTO.class
-                );
+        return productoUseCase.getAllProductosViewRaw()
+                .map(o -> ProductoViewDTO.fromMap((Map<String,Object>) o))
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 
     public Mono<ServerResponse> getProductoGlobalView(ServerRequest req) {
         String pId = req.pathVariable("productoId");
         return productoUseCase.getProductoGlobalViewRaw(pId)
-                .map(DtoMappers::toProductoViewDTO)
-                .flatMap(dto -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(dto));
+                .map(ProductoViewDTO::fromMap)
+                .flatMap(dto -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).bodyValue(ApiResponse.ok(dto)));
     }
 
     public Mono<ServerResponse> getProductosDeSucursal(ServerRequest req) {
         String fId = req.pathVariable("franquiciaId");
         String sId = req.pathVariable("sucursalId");
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(productoUseCase.getProductosDeSucursal(fId, sId), Producto.class);
+        return productoUseCase.getProductosDeSucursal(fId, sId)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponse.ok(list)));
     }
 }

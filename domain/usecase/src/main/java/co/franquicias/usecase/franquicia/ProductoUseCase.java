@@ -48,25 +48,15 @@ public class ProductoUseCase {
     }
 
     public Flux<Map<String, Object>> maxStockPorSucursal(String franquiciaId) {
-        return sucursalRepository.listarPorFranquicia(franquiciaId)
-                .flatMap(suc ->
-                        productoRepository.listarPorSucursal(suc.getId())
-                                .sort(Comparator.comparingInt(Producto::getStock).reversed())
-                                .next()
-                                .map(prod -> Map.<String,Object>of(
-                                        "sucursalId",     suc.getId(),
-                                        "sucursalNombre", suc.getNombre(),
-                                        "productoId",     prod.getId(),
-                                        "productoNombre", prod.getNombre(),
-                                        "stock",          prod.getStock()
-                                ))
-                                .defaultIfEmpty(Map.of(
-                                        "sucursalId",     suc.getId(),
-                                        "sucursalNombre", suc.getNombre(),
-                                        "productoId",     "N/A",
-                                        "productoNombre", "N/A",
-                                        "stock",          0
-                                ))
+        return productoRepository.findTopStockProductsByFranquicia(franquiciaId)
+                .flatMap(prod -> sucursalRepository.findById(prod.getSucursalId())
+                        .map(suc -> Map.<String, Object>of(
+                                "sucursalId",     suc.getId(),
+                                "sucursalNombre", suc.getNombre(),
+                                "productoId",     prod.getId(),
+                                "productoNombre", prod.getNombre(),
+                                "stock",          prod.getStock()
+                        ))
                 );
     }
 

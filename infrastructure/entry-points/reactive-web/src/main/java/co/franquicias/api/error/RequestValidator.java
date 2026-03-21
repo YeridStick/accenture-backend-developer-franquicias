@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
@@ -14,10 +15,10 @@ public class RequestValidator {
 
     private final Validator validator;
 
-    public <T> void validate(T object) {
+    public <T> Mono<T> validate(T object) {
         Set<ConstraintViolation<T>> violations = validator.validate(object);
-        if (!violations.isEmpty()) {
-            throw new ConstraintViolationException(violations);
-        }
+        return violations.isEmpty()
+                ? Mono.just(object)
+                : Mono.error(new ConstraintViolationException(violations));
     }
 }

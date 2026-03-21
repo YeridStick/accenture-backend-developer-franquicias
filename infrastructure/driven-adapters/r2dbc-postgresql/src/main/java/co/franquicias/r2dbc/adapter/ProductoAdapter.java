@@ -81,4 +81,9 @@ public class ProductoAdapter extends ReactiveAdapterOperations<Producto, Product
         cambios.setUpdatedAt(Instant.now());
         return mergeNonNullAndSave(id, cambios);
     }
+
+    @Override
+    public Flux<Producto> findTopStockProductsByFranquicia(String franquiciaId) {
+        return repository.findTopStockProductsByFranquicia(franquiciaId).map(this::toEntity);
+    }
 }

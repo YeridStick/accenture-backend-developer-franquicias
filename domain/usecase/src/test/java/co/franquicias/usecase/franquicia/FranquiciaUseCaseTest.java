@@ -79,4 +79,17 @@ class FranquiciaUseCaseTest {
         StepVerifier.create(useCase.eliminarFranquiciaPorId("f1"))
                 .expectNext("ok").verifyComplete();
     }
+
+    @Test
+    void actualizarFranquicia() {
+        String id = "f1";
+        Franquicia cambios = Franquicia.builder().nombre("Nombre Actualizado").build();
+        Franquicia result = franq(id, "Nombre Actualizado");
+        
+        when(franquiciaRepo.actualizarFranquicia(id, cambios)).thenReturn(Mono.just(result));
+        
+        StepVerifier.create(useCase.actualizarFranquicia(id, cambios))
+                .expectNextMatches(f -> f.getNombre().equals("Nombre Actualizado"))
+                .verifyComplete();
+    }
 }

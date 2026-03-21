@@ -12,4 +12,5 @@ public interface ProductoRepositoryPort {
     Mono<String> eliminarPorId(String id);
     Mono<Producto> actualizarProducto(String id, Producto cambios);
     Flux<Producto> findAll();
+    Flux<Producto> findTopStockProductsByFranquicia(String franquiciaId);
 }

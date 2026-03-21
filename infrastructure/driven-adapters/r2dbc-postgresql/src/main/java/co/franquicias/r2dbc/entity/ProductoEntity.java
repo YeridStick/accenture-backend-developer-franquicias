@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
@@ -14,7 +15,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table("productos")
-public class ProductoEntity {
+public class ProductoEntity implements Persistable<String> {
     @Id
     private String id;
     private String sucursalId;
@@ -23,4 +24,13 @@ public class ProductoEntity {
     private int stock;
     private Instant createdAt;
     private Instant updatedAt;
+
+    @org.springframework.data.annotation.Transient
+    @Builder.Default
+    private boolean isNewRecord = true;
+
+    @Override
+    public boolean isNew() {
+        return isNewRecord;
+    }
 }

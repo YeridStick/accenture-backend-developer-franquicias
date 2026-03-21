@@ -1,5 +1,7 @@
 package co.franquicias.api.dto.producto;
 
+import java.util.Map;
+
 public record ProductoViewDTO(
         String productoId,
         String productoNombre,
@@ -9,4 +11,24 @@ public record ProductoViewDTO(
         String franquiciaNombre,
         String sucursalId,
         String sucursalNombre
-) {}
+) {
+    public static ProductoViewDTO fromMap(Map<String, Object> m) {
+        return new ProductoViewDTO(
+                (String) m.get("productoId"),
+                (String) m.get("productoNombre"),
+                toInt(m.get("stock"), 0),
+                (Long) m.get("precio"),
+                (String) m.get("franquiciaId"),
+                (String) m.get("franquiciaNombre"),
+                (String) m.get("sucursalId"),
+                (String) m.get("sucursalNombre")
+        );
+    }
+
+    private static int toInt(Object val, int def) {
+        if (val == null) return def;
+        if (val instanceof Number n) return n.intValue();
+        try { return Integer.parseInt(val.toString()); }
+        catch (Exception e) { return def; }
+    }
+}
