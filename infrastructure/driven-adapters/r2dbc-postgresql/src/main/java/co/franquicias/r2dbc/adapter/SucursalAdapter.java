@@ -28,14 +28,9 @@ public class SucursalAdapter extends ReactiveAdapterOperations<Sucursal, Sucursa
 
     @Override
     public Mono<Sucursal> crear(String franquiciaId, String nombre) {
-        var now = Instant.now();
         var data = SucursalEntity.builder()
-                .id(UUID.randomUUID().toString())
                 .franquiciaId(franquiciaId)
                 .nombre(nombre)
-                .createdAt(now)
-                .updatedAt(now)
-                .isNewRecord(true)
                 .build();
 
         return franquiciaRepository.existsById(franquiciaId)

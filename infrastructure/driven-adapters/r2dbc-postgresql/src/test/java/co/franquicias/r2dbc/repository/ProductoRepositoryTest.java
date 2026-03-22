@@ -25,44 +25,26 @@ class ProductoRepositoryTest {
     @Autowired
     private FranquiciaRepository franquiciaRepository;
 
-    private Mono<Void> setupData(String fId, String sId) {
+    private Mono<SucursalEntity> setupData() {
         return franquiciaRepository.save(FranquiciaEntity.builder()
-                        .id(fId)
-                        .nombre("F-Prod-" + fId)
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
+                        .nombre("F-Prod-" + UUID.randomUUID())
                         .build())
-                .then(sucursalRepository.save(SucursalEntity.builder()
-                        .id(sId)
-                        .franquiciaId(fId)
-                        .nombre("S-Prod-" + sId)
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        .build()))
-                .then();
+                .flatMap(f -> sucursalRepository.save(SucursalEntity.builder()
+                        .franquiciaId(f.getId())
+                        .nombre("S-Prod-" + UUID.randomUUID())
+                        .build()));
     }
 
     @Test
     void saveAndFind() {
-        String fId = UUID.randomUUID().toString();
-        String sId = UUID.randomUUID().toString();
-        String pId = UUID.randomUUID().toString();
-
-        setupData(fId, sId)
-                .then(repository.save(ProductoEntity.builder()
-                        .id(pId)
-                        .sucursalId(sId)
+        setupData()
+                .flatMap(sucursal -> repository.save(ProductoEntity.builder()
+                        .sucursalId(sucursal.getId())
                         .nombre("P1")
-                        .precio(100)
+                        .precio(100L)
                         .stock(50)
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
                         .build()))
-                .as(StepVerifier::create)
-                .expectNextCount(1)
-                .verifyComplete();
-
-        repository.findBySucursalId(sId)
+                .flatMap(prod -> repository.findBySucursalId(prod.getSucursalId()).next())
                 .as(StepVerifier::create)
                 .expectNextMatches(prod -> prod.getNombre().equals("P1"))
                 .verifyComplete();
@@ -70,40 +52,32 @@ class ProductoRepositoryTest {
 
     @Test
     void findTopStockProductsByFranquicia() {
-        String fId = UUID.randomUUID().toString();
-        String sId1 = UUID.randomUUID().toString();
-        String sId2 = UUID.randomUUID().toString();
-
-        Mono<Void> complexSetup = franquiciaRepository.save(FranquiciaEntity.builder()
-                        .id(fId)
-                        .nombre("F-Complex")
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
+        Mono<FranquiciaEntity> complexSetup = franquiciaRepository.save(FranquiciaEntity.builder()
+                        .nombre("F-Complex-" + UUID.randomUUID())
                         .build())
-                .then(sucursalRepository.save(SucursalEntity.builder()
-                        .id(sId1)
-                        .franquiciaId(fId)
+                .flatMap(f -> sucursalRepository.save(SucursalEntity.builder()
+                        .franquiciaId(f.getId())
                         .nombre("S1")
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        .build()))
-                .then(sucursalRepository.save(SucursalEntity.builder()
-                        .id(sId2)
-                        .franquiciaId(fId)
-                        .nombre("S2")
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        .build()))
-                .then(repository.save(ProductoEntity.builder().id(UUID.randomUUID().toString()).sucursalId(sId1).nombre("P1-S1").stock(10).createdAt(Instant.now()).updatedAt(Instant.now()).build()))
-                .then(repository.save(ProductoEntity.builder().id(UUID.randomUUID().toString()).sucursalId(sId1).nombre("P1-MAX").stock(50).createdAt(Instant.now()).updatedAt(Instant.now()).build()))
-                .then(repository.save(ProductoEntity.builder().id(UUID.randomUUID().toString()).sucursalId(sId2).nombre("P2-S2").stock(20).createdAt(Instant.now()).updatedAt(Instant.now()).build()))
-                .then(repository.save(ProductoEntity.builder().id(UUID.randomUUID().toString()).sucursalId(sId2).nombre("P2-MAX").stock(80).createdAt(Instant.now()).updatedAt(Instant.now()).build()))
-                .then();
+                        .build())
+                        .zipWith(sucursalRepository.save(SucursalEntity.builder()
+                                .franquiciaId(f.getId())
+                                .nombre("S2")
+                                .build()))
+                        .flatMap(tuple -> {
+                            String sid1 = tuple.getT1().getId();
+                            String sid2 = tuple.getT2().getId();
+                            return repository.save(ProductoEntity.builder().sucursalId(sid1).nombre("P1-S1").stock(10).build())
+                                     .then(repository.save(ProductoEntity.builder().sucursalId(sid1).nombre("P1-MAX").stock(50).build()))
+                                     .then(repository.save(ProductoEntity.builder().sucursalId(sid2).nombre("P2-S2").stock(20).build()))
+                                     .then(repository.save(ProductoEntity.builder().sucursalId(sid2).nombre("P2-MAX").stock(80).build()));
+                        })
+                        .thenReturn(f)
+                );
 
-        complexSetup.thenMany(repository.findTopStockProductsByFranquicia(fId))
+        complexSetup.flatMapMany(f -> repository.findTopStockProductsByFranquicia(f.getId()))
                 .as(StepVerifier::create)
-                .expectNextMatches(p -> p.getNombre().startsWith("P1-MAX"))
                 .expectNextMatches(p -> p.getNombre().startsWith("P2-MAX"))
+                .expectNextMatches(p -> p.getNombre().startsWith("P1-MAX"))
                 .verifyComplete();
     }
 }

@@ -24,11 +24,7 @@ public class FranquiciaAdapter extends ReactiveAdapterOperations<Franquicia, Fra
     @Override
     public Mono<Franquicia> crearFranquicia(String nombre) {
         var data = FranquiciaEntity.builder()
-                .id(UUID.randomUUID().toString())
                 .nombre(nombre)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .isNewRecord(true)
                 .build();
 
         return repository.existsByNombre(nombre)

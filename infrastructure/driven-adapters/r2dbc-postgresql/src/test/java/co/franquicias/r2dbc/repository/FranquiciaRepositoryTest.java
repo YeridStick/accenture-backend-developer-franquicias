@@ -20,22 +20,21 @@ class FranquiciaRepositoryTest {
 
     @Test
     void saveAndFind() {
-        String id = UUID.randomUUID().toString();
         FranquiciaEntity entity = FranquiciaEntity.builder()
-                .id(id)
                 .nombre("Test Franquicia")
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
                 .build();
 
         repository.save(entity)
                 .as(StepVerifier::create)
-                .expectNextCount(1)
+                .expectNextMatches(f -> {
+                    assertNotNull(f.getId());
+                    return f.getNombre().equals("Test Franquicia");
+                })
                 .verifyComplete();
 
         repository.findByNombre("Test Franquicia")
                 .as(StepVerifier::create)
-                .expectNextMatches(f -> f.getId().equals(id))
+                .expectNextMatches(f -> f.getNombre().equals("Test Franquicia"))
                 .verifyComplete();
 
         repository.existsByNombre("Test Franquicia")

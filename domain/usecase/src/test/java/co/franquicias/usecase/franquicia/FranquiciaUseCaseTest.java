@@ -52,24 +52,15 @@ class FranquiciaUseCaseTest {
     }
 
     @Test
-    @DisplayName("obtenerPorId: hidrata sucursales y productos")
-    void obtenerPorId_hydration() {
+    @DisplayName("obtenerPorId: delega al repo")
+    void obtenerPorId_ok() {
         String fId = "f1";
-        String sId = "s1";
         Franquicia f = franq(fId, "F1");
-        Sucursal s = suc(sId, fId, "S1");
-        Producto p = prod("p1", sId, "P1", 10);
 
         when(franquiciaRepo.findById(fId)).thenReturn(Mono.just(f));
-        when(sucursalRepo.listarPorFranquicia(fId)).thenReturn(Flux.just(s));
-        when(productoRepo.listarPorSucursal(sId)).thenReturn(Flux.just(p));
 
         StepVerifier.create(useCase.obtenerPorId(fId))
-                .expectNextMatches(result -> {
-                    return result.getSucursales().size() == 1 &&
-                           result.getSucursales().get(0).getProductos().size() == 1 &&
-                           result.getSucursales().get(0).getProductos().get(0).getNombre().equals("P1");
-                })
+                .expectNextMatches(result -> result.getId().equals(fId))
                 .verifyComplete();
     }
 

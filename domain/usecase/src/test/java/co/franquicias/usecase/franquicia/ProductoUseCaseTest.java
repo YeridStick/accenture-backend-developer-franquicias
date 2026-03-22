@@ -2,6 +2,7 @@ package co.franquicias.usecase.franquicia;
 
 import co.franquicias.model.error.ConflictException;
 import co.franquicias.model.error.NotFoundException;
+import co.franquicias.model.franquicia.FranquiciaRepositoryPort;
 import co.franquicias.model.producto.Producto;
 import co.franquicias.model.producto.ProductoRepositoryPort;
 import co.franquicias.model.sucursal.Sucursal;
@@ -26,12 +27,14 @@ class ProductoUseCaseTest {
     private ProductoRepositoryPort productoRepository;
     @Mock
     private SucursalRepositoryPort sucursalRepository;
+    @Mock
+    private FranquiciaRepositoryPort franquiciaRepository;
 
     private ProductoUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new ProductoUseCase(productoRepository, sucursalRepository);
+        useCase = new ProductoUseCase(productoRepository, sucursalRepository, franquiciaRepository);
     }
 
     @Test
@@ -44,9 +47,9 @@ class ProductoUseCaseTest {
         Producto p = Producto.builder().id("p1").nombre(pName).build();
 
         when(sucursalRepository.findById(sId)).thenReturn(Mono.just(s));
-        when(productoRepository.crear(sId, pName, 10)).thenReturn(Mono.just(p));
+        when(productoRepository.crear(sId, pName, 100L, 10)).thenReturn(Mono.just(p));
 
-        StepVerifier.create(useCase.agregarProducto(fId, sId, pName, 10))
+        StepVerifier.create(useCase.agregarProducto(fId, sId, pName, 100L, 10))
                 .expectNext(p)
                 .verifyComplete();
     }
@@ -59,7 +62,7 @@ class ProductoUseCaseTest {
 
         when(sucursalRepository.findById(sId)).thenReturn(Mono.just(s));
 
-        StepVerifier.create(useCase.agregarProducto(fId, sId, "P1", 10))
+        StepVerifier.create(useCase.agregarProducto(fId, sId, "P1", 100L, 10))
                 .expectError(ConflictException.class)
                 .verify();
     }
@@ -105,9 +108,11 @@ class ProductoUseCaseTest {
         String sId = "s1";
         Producto p = Producto.builder().id(pId).sucursalId(sId).nombre("P1").stock(10).build();
         Sucursal s = Sucursal.builder().id(sId).nombre("S1").franquiciaId("f1").build();
+        co.franquicias.model.franquicia.Franquicia f = co.franquicias.model.franquicia.Franquicia.builder().id("f1").nombre("F1").build();
 
         when(productoRepository.findById(pId)).thenReturn(Mono.just(p));
         when(sucursalRepository.findById(sId)).thenReturn(Mono.just(s));
+        when(franquiciaRepository.findById("f1")).thenReturn(Mono.just(f));
 
         StepVerifier.create(useCase.getProductoGlobal(pId))
                 .expectNextMatches(map -> 

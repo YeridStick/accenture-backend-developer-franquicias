@@ -20,7 +20,8 @@ public interface ProductoRepository extends ReactiveCrudRepository<ProductoEntit
         "SELECT p.* FROM productos p " +
         "JOIN sucursales s ON p.sucursal_id = s.id " +
         "WHERE s.franquicia_id = :franquiciaId " +
-        "AND p.stock = (SELECT MAX(p2.stock) FROM productos p2 WHERE p2.sucursal_id = s.id)"
+        "AND p.stock = (SELECT MAX(p2.stock) FROM productos p2 WHERE p2.sucursal_id = s.id) " +
+        "ORDER BY p.stock DESC"
     )
     Flux<ProductoEntity> findTopStockProductsByFranquicia(String franquiciaId);
 }

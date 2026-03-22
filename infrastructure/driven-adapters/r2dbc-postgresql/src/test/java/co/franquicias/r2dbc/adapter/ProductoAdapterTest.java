@@ -47,7 +47,7 @@ class ProductoAdapterTest {
         when(repository.save(any(ProductoEntity.class))).thenReturn(Mono.just(entity));
         when(mapper.map(entity, Producto.class)).thenReturn(domain);
 
-        StepVerifier.create(adapter.crear(sId, name, 10))
+        StepVerifier.create(adapter.crear(sId, name, 0L, 10))
                 .expectNext(domain)
                 .verifyComplete();
     }

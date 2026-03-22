@@ -29,16 +29,11 @@ public class ProductoAdapter extends ReactiveAdapterOperations<Producto, Product
 
     @Override
     public Mono<Producto> crear(String sucursalId, String nombre, long precio, int stock) {
-        var now = Instant.now();
         var data = ProductoEntity.builder()
-                .id(UUID.randomUUID().toString())
                 .sucursalId(sucursalId)
                 .nombre(nombre)
                 .precio(precio)
                 .stock(stock)
-                .createdAt(now)
-                .updatedAt(now)
-                .isNewRecord(true)
                 .build();
 
         return sucursalRepository.existsById(sucursalId)
