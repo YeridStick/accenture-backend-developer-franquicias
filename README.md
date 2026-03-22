@@ -87,9 +87,32 @@ Para construir y correr la aplicación en un contenedor:
 - **Swagger UI**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
 - **Health Check**: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
 
-## Endpoints Principales
-- **POST** `/api/franquicias`: Crear una franquicia.
-- **POST** `/api/franquicias/{fid}/sucursales`: Agregar sucursal.
-- **POST** `/api/franquicias/{fid}/sucursales/{sid}/productos`: Agregar producto.
-- **GET** `/api/productos/view`: Vista global de productos.
-- **GET** `/api/franquicias/{fid}/max-stock-por-sucursal`: Reporte de stock máximo.
+---
+
+# API Documentation
+
+### Franquicias
+- **Crear Franquicia**: `POST /api/franquicias`
+  - Body: `{ "nombre": "Nombre de la Franquicia" }`
+- **Actualizar Nombre**: `PATCH /api/franquicias/{fid}`
+  - Body: `{ "nombre": "Nuevo Nombre" }`
+
+### Sucursales
+- **Agregar Sucursal**: `POST /api/franquicias/{fid}/sucursales`
+  - Body: `{ "nombre": "Nombre de la Sucursal" }`
+- **Actualizar Nombre**: `PATCH /api/sucursales/{sid}`
+  - Body: `{ "nombre": "Nuevo Nombre" }`
+
+### Productos
+- **Agregar Producto**: `POST /api/franquicias/{fid}/sucursales/{sid}/productos`
+  - Body: `{ "nombre": "Producto A", "stock": 100, "precio": 5000 }`
+- **Eliminar Producto**: `DELETE /api/franquicias/{fid}/sucursales/{sid}/productos/{pid}`
+- **Modificar Stock**: `PATCH /api/franquicias/{fid}/sucursales/{sid}/productos/{pid}/stock`
+  - Body: `{ "stock": 50 }`
+- **Actualizar Datos (Nombre/Precio)**: `PATCH /api/productos/{pid}`
+  - Body: `{ "nombre": "Nuevo Nombre", "precio": 6000 }`
+
+### Consultas y Reportes
+- **Vista Global de Productos (Paginada)**: `GET /api/productos/view?page=0&size=10`
+- **Reporte de Stock Máximo (Punto 7)**: `GET /api/franquicias/{fid}/max-stock-por-sucursal`
+  - *Muestra el producto con mayor stock por cada sucursal de la franquicia.*
