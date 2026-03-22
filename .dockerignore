@@ -1,0 +1,13 @@
+**/.gradle
+**/build
+**/build-cache
+**compilation-log.txt
+**/.idea
+**/.vscode
+**/node_modules
+**/.git
+**/.github
+*.log
+.DS_Store
+# Pero necesitamos el JAR para copiarlo!
+!applications/app-service/build/libs/franquicias-back.jar

@@ -45,3 +45,51 @@ Los entry points representan los puntos de entrada de la aplicación o el inicio
 Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función “public static void main(String[] args)”.
 
 **Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
+
+---
+
+# Guía de Inicio Rápido
+
+## Requisitos
+- **Java 21** (Temurin recomendado)
+- **Gradle 8.x**
+- **Podman** o **Docker** (para despliegue en contenedores)
+
+##  Construcción y Ejecución Local
+Para compilar y ejecutar el proyecto localmente:
+
+```bash
+# Otorgar permisos de ejecución (Linux/Mac)
+chmod +x gradlew
+
+# Construir y ejecutar
+./gradlew bootRun
+```
+El servicio estará disponible en `http://localhost:8081`.
+
+## Dockerización con Podman
+Para construir y correr la aplicación en un contenedor:
+
+1. **Generar el JAR**:
+   ```bash
+   ./gradlew :app-service:bootJar
+   ```
+2. **Construir la imagen**:
+   ```bash
+   podman build -t franquicias-back -f deployment/Dockerfile .
+   ```
+3. **Ejecutar el contenedor**:
+   ```bash
+   podman run -d --name franquicias-app -p 8081:8081 -e PORT=8081 franquicias-back
+   ```
+
+## Documentación y Salud
+- **Swagger UI**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- **Health Check**: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
+
+## Endpoints Principales
+- **POST** `/api/franquicias`: Crear una franquicia.
+- **POST** `/api/franquicias/{fid}/sucursales`: Agregar sucursal.
+- **POST** `/api/franquicias/{fid}/sucursales/{sid}/productos`: Agregar producto.
+- **GET** `/api/productos/view`: Vista global de productos.
+- **GET** `/api/franquicias/{fid}/max-stock-por-sucursal`: Reporte de stock máximo.
